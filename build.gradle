@@ -1,0 +1,6 @@
+plugins {
+    id 'java'
+}
+
+group = 'ccetl'
+version = '1.0'
