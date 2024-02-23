@@ -13,9 +13,10 @@ import java.util.Random;
 import java.util.function.Supplier;
 
 public class ParticleSystem extends ParticleBase<ParticleOptions, ParticleElement> {
+    private static final double HALF_PI = 0.5 * Math.PI;
+    private LineShapeMaker lineShapeMaker;
     private double positionX;
     private double positionY;
-    private LineShapeMaker lineShapeMaker;
 
     public ParticleSystem(ParticleOptions defaultConfig, int width, int height) {
         super(defaultConfig, width, height);
@@ -107,7 +108,6 @@ public class ParticleSystem extends ParticleBase<ParticleOptions, ParticleElemen
             } catch (StackOverflowError e) {
                 e.printStackTrace();
             }
-
         }
 
         this.elements.add(dot);
@@ -159,10 +159,9 @@ public class ParticleSystem extends ParticleBase<ParticleOptions, ParticleElemen
                         Vec2d vec2 = vec.copy().set(vec);
 
                         Vec2d deltaVec = vec1.copy().subtract(vec2);
-                        double rotation = -Math.atan2(deltaVec.getX(), deltaVec.getY());
-                        rotation = Math.toRadians(Math.toDegrees(rotation) + 180);
-                        double correctedRotation = rotation - 0.5 * Math.PI;
-                        double correctedRotation1 = rotation + 0.5 * Math.PI;
+                        double rotation = Math.PI - Math.atan2(deltaVec.getX(), deltaVec.getY());
+                        double correctedRotation = rotation - HALF_PI;
+                        double correctedRotation1 = rotation + HALF_PI;
 
                         x = Math.round(vec.getX() + Math.cos(correctedRotation) * dot.getRadius());
                         y = Math.round(vec.getY() + Math.sin(correctedRotation) * dot.getRadius());
