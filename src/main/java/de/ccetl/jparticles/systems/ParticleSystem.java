@@ -15,6 +15,7 @@ import java.util.function.Supplier;
 public class ParticleSystem extends ParticleBase<ParticleOptions, ParticleElement> {
     private static final double HALF_PI = 0.5 * Math.PI;
     private LineShapeMaker lineShapeMaker;
+    private long lastTrailUpdate;
     private double positionX;
     private double positionY;
 
@@ -33,6 +34,7 @@ public class ParticleSystem extends ParticleBase<ParticleOptions, ParticleElemen
 
         elements.clear();
         createDots();
+        lastTrailUpdate = System.currentTimeMillis();
     }
 
     private void defineLineShape() {
@@ -118,6 +120,7 @@ public class ParticleSystem extends ParticleBase<ParticleOptions, ParticleElemen
         positionX = mouseX;
         positionY = mouseY;
         updateXY(mouseX, mouseY);
+        drawTrail();
 
         for (ParticleElement dot : this.elements) {
             double x = dot.getX() + dot.getParallaxOffsetX();
@@ -127,6 +130,57 @@ public class ParticleSystem extends ParticleBase<ParticleOptions, ParticleElemen
 
         connectDots();
         createDots();
+    }
+
+    private void drawTrail() {
+        if (!options.isTrail()) {
+            return;
+        }
+
+        double alive = options.getTrailAlive();
+        long time = System.currentTimeMillis();
+        boolean create = time - lastTrailUpdate >= options.getTrailUpdate();
+        for (ParticleElement dot : elements) {
+            LinkedList<Trail> trail = dot.getTrail();
+
+            if (create) {
+                trail.add(new Trail(dot.getX(), dot.getY(), time));
+            }
+
+            int length = trail.size();
+            if (length == 0) {
+                continue;
+            }
+
+            if (time - trail.peek().getCreation() > alive) {
+                trail.poll();
+                if (length == 1) {
+                    continue;
+                }
+            }
+
+            int dotColor = dot.getColor();
+            double alpha = (dotColor >> 24) & 0xFF;
+            double size = dot.getRadius() + dot.getRadius();
+
+            for (Trail t : trail) {
+                double p = 1 - (time - t.getCreation()) / alive;
+                if (p <= 0 || p > 1) {
+                    continue;
+                }
+
+                int modified = (int) Math.round(p * alpha);
+
+                double modifiedSize = size;
+                if (options.isTrailShrink()) {
+                    modifiedSize *= p;
+                }
+
+                dot.getShape().render(options.getRenderer(), t, modifiedSize * 0.5, (modified << 24) | (dotColor & 0x00FFFFFF));
+            }
+        }
+
+        lastTrailUpdate = time;
     }
 
     private void connectDots() {
@@ -302,6 +356,10 @@ public class ParticleSystem extends ParticleBase<ParticleOptions, ParticleElemen
         private double parallaxStrength = 3;
         private boolean hoverRepulse = false;
         private double repulseRadius = 100;
+        private boolean trail = false;
+        private double trailUpdate = 20;
+        private double trailAlive = 1000;
+        private boolean trailShrink = true;
 
         @Override
         public Supplier<Shape> getShapeSupplier() {
@@ -490,6 +548,42 @@ public class ParticleSystem extends ParticleBase<ParticleOptions, ParticleElemen
 
         public void setRepulseRadius(double repulseRadius) {
             this.repulseRadius = repulseRadius;
+        }
+
+        @Override
+        public boolean isTrail() {
+            return trail;
+        }
+
+        public void setTrail(boolean trail) {
+            this.trail = trail;
+        }
+
+        @Override
+        public double getTrailUpdate() {
+            return trailUpdate;
+        }
+
+        public void setTrailUpdate(double trailUpdate) {
+            this.trailUpdate = trailUpdate;
+        }
+
+        @Override
+        public double getTrailAlive() {
+            return trailAlive;
+        }
+
+        public void setTrailAlive(double trailAlive) {
+            this.trailAlive = trailAlive;
+        }
+
+        @Override
+        public boolean isTrailShrink() {
+            return trailShrink;
+        }
+
+        public void setTrailShrink(boolean trailShrink) {
+            this.trailShrink = trailShrink;
         }
     }
 }

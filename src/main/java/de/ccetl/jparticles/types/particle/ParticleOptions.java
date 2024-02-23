@@ -50,4 +50,16 @@ public interface ParticleOptions extends CommonParticleOptions {
     boolean isHoverRepulse();
 
     double getRepulseRadius();
+
+    // Draws shapes with reduced alpha where the particles have been
+    boolean isTrail();
+
+    // How long to wait before setting the point (in MS)
+    double getTrailUpdate();
+
+    // How long a point should stay alive (in MS)
+    double getTrailAlive();
+
+    // When enabled, the trail gets smaller based on the time alive
+    boolean isTrailShrink();
 }

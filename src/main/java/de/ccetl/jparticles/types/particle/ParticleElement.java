@@ -5,11 +5,14 @@ import de.ccetl.jparticles.core.shape.Shape;
 import de.ccetl.jparticles.util.Utils;
 import de.ccetl.jparticles.util.Vec2d;
 
+import java.util.LinkedList;
+
 public class ParticleElement extends Element {
-    protected int parallaxLayer;
-    protected double parallaxOffsetX;
-    protected double parallaxOffsetY;
-    protected boolean velocityChanged;
+    private final LinkedList<Trail> trail = new LinkedList<>();
+    private final int parallaxLayer;
+    private double parallaxOffsetX;
+    private double parallaxOffsetY;
+    private boolean velocityChanged;
 
     public ParticleElement(double radius, double x, double y, double vx, double vy, int color, Shape shape, int parallaxLayer, double parallaxOffsetX, double parallaxOffsetY) {
         super(x, y, radius, vx, vy, color, shape);
@@ -93,5 +96,9 @@ public class ParticleElement extends Element {
 
     public void setVelocityChanged(boolean velocityChanged) {
         this.velocityChanged = velocityChanged;
+    }
+
+    public LinkedList<Trail> getTrail() {
+        return trail;
     }
 }
