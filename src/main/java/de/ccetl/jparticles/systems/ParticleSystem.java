@@ -61,11 +61,11 @@ public class ParticleSystem extends ParticleBase<ParticleOptions, ParticleElemen
 
     private void createDots() {
         for (int i = elements.size(); i < options.getNumber(); i++) {
-            createDot();
+            createDot(false);
         }
     }
 
-    private void createDot() {
+    private void createDot(boolean force) {
         double r = Utils.getRandomInRange(options.getMinRadius(), options.getMaxRadius());
         double minX = r;
         double maxX = width - r;
@@ -102,11 +102,11 @@ public class ParticleSystem extends ParticleBase<ParticleOptions, ParticleElemen
         Vec2d speed = Utils.getSpeed(options.getDirection(), options.getMinSpeed(), options.getMaxSpeed());
         ParticleElement dot = new ParticleElement(r, Utils.getRandomInRange(minX, maxX), Utils.getRandomInRange(minY, maxY), speed.getX(), speed.getY(), options.getColorSupplier().get(), options.getShapeSupplier().get(), options.getParallaxLayer()[new Random().nextInt(options.getParallaxLayer().length)], 0, 0);
 
-        if (options.getCollisionIntern() != Obstacle.IGNORE && elements.stream().anyMatch(dot1 -> Utils.intersect(dot, dot1))) {
+        if (!force && options.getCollisionIntern() != Obstacle.IGNORE && elements.stream().anyMatch(dot1 -> Utils.intersect(dot, dot1))) {
             try {
-                createDot();
+                createDot(false);
             } catch (StackOverflowError e) {
-                e.printStackTrace();
+                createDot(true);
             }
         }
 
