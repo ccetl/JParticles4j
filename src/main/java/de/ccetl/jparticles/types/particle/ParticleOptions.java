@@ -52,7 +52,7 @@ public interface ParticleOptions extends CommonParticleOptions {
     double getRepulseRadius();
 
     // Draws shapes with reduced alpha where the particles have been
-    boolean isTrail();
+    boolean isTrails();
 
     // How long to wait before setting the point (in MS)
     double getTrailUpdate();

@@ -120,7 +120,7 @@ public class ParticleSystem extends ParticleBase<ParticleOptions, ParticleElemen
         positionX = mouseX;
         positionY = mouseY;
         updateXY(mouseX, mouseY);
-        drawTrail();
+        drawTrails();
 
         for (ParticleElement dot : this.elements) {
             double x = dot.getX() + dot.getParallaxOffsetX();
@@ -132,8 +132,8 @@ public class ParticleSystem extends ParticleBase<ParticleOptions, ParticleElemen
         createDots();
     }
 
-    private void drawTrail() {
-        if (!options.isTrail()) {
+    private void drawTrails() {
+        if (!options.isTrails()) {
             return;
         }
 
@@ -356,7 +356,7 @@ public class ParticleSystem extends ParticleBase<ParticleOptions, ParticleElemen
         private double parallaxStrength = 3;
         private boolean hoverRepulse = false;
         private double repulseRadius = 100;
-        private boolean trail = false;
+        private boolean trails = false;
         private double trailUpdate = 20;
         private double trailAlive = 1000;
         private boolean trailShrink = true;
@@ -551,12 +551,12 @@ public class ParticleSystem extends ParticleBase<ParticleOptions, ParticleElemen
         }
 
         @Override
-        public boolean isTrail() {
-            return trail;
+        public boolean isTrails() {
+            return trails;
         }
 
-        public void setTrail(boolean trail) {
-            this.trail = trail;
+        public void setTrails(boolean trails) {
+            this.trails = trails;
         }
 
         @Override
