@@ -1,7 +1,6 @@
 package de.ccetl.jparticles.core;
 
 import de.ccetl.jparticles.core.shape.Shape;
-import de.ccetl.jparticles.event.ResizeEvent;
 import de.ccetl.jparticles.util.Vec2d;
 
 /**
@@ -11,19 +10,19 @@ public abstract class Element extends Vec2d {
     /**
      * The radius of the element.
      */
-    private double radius;
+    private final double radius;
     /**
      * Represents the velocity.
      */
-    private Vec2d v;
+    private final Vec2d v;
     /**
      * The color of the element.
      */
-    private int color;
+    private final int color;
     /**
      * The shape.
      */
-    private Shape shape;
+    private final Shape shape;
 
     public Element(double x, double y, double radius, double vx, double vy, int color, Shape shape) {
         super(x, y);
@@ -31,13 +30,6 @@ public abstract class Element extends Vec2d {
         this.v = new Vec2d(vx, vy);
         this.color = color;
         this.shape = shape;
-    }
-
-    public void onResize(ResizeEvent event, int oldWidth, int oldHeight) {
-        double ax = getX() / oldWidth;
-        double ay = getY() / oldHeight;
-        setX(ax * event.newWidth);
-        setY(ay * event.newHeight);
     }
 
     public double getRadius() {

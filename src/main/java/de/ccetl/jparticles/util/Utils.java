@@ -4,7 +4,10 @@ import de.ccetl.jparticles.core.shape.ShapeType;
 import de.ccetl.jparticles.types.particle.Direction;
 import de.ccetl.jparticles.types.particle.ParticleElement;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
+import java.util.function.Supplier;
 
 public class Utils {
     private static final Random random = new Random();
@@ -21,6 +24,10 @@ public class Utils {
         double range = max - min;
         double scaled = min + random.nextDouble() * range;
         return Math.min(max, scaled);
+    }
+
+    public static int generateRandomColor() {
+        return (255 << 24) | (random.nextInt(256) << 16) | (random.nextInt(256) << 8) | random.nextInt(256);
     }
 
     public static Vec2d getSpeed(Direction direction, double min, double max) {
@@ -56,6 +63,14 @@ public class Utils {
 
     private static int randomizeDirection(double d) {
         return d * Math.random() >= 0.5 ? 1 : -1;
+    }
+
+    public static List<Double> fillArrayList(Supplier<Double> value, int size) {
+        List<Double> list = new ArrayList<>();
+        for (int i = 0; i < size; i++) {
+            list.add(value.get());
+        }
+        return list;
     }
 
     public static boolean intersect(ParticleElement element, ParticleElement other) {

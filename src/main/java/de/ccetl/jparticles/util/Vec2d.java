@@ -1,5 +1,7 @@
 package de.ccetl.jparticles.util;
 
+import de.ccetl.jparticles.event.ResizeEvent;
+
 /**
  * A point on the screen.
  */
@@ -65,6 +67,13 @@ public class Vec2d {
         this.x = other.x;
         this.y = other.y;
         return this;
+    }
+
+    public void onResize(ResizeEvent event, int oldWidth, int oldHeight) {
+        double ax = getX() / oldWidth;
+        double ay = getY() / oldHeight;
+        setX(ax * event.newWidth);
+        setY(ay * event.newHeight);
     }
 
     public Vec2d copy() {

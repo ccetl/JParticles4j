@@ -14,7 +14,6 @@ public abstract class Base<T extends CommonOptions> {
     protected long lastUpdate;
 
     protected Base(T config, int width, int height) {
-        // Cache the color acquisition function to improve performance
         this.options = config;
         this.width = width;
         this.height = height;
