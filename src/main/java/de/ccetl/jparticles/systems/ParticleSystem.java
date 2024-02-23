@@ -144,7 +144,7 @@ public class ParticleSystem extends ParticleBase<ParticleOptions, ParticleElemen
             LinkedList<Trail> trail = dot.getTrail();
 
             if (create) {
-                trail.add(new Trail(dot.getX(), dot.getY(), time));
+                trail.add(new Trail(Utils.getX(dot), Utils.getY(dot), time));
             }
 
             int length = trail.size();
