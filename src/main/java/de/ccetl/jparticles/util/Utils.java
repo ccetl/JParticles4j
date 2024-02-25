@@ -61,8 +61,8 @@ public class Utils {
         return randomizeDirection(getRandomInRange(min, max));
     }
 
-    private static int randomizeDirection(double d) {
-        return d * Math.random() >= 0.5 ? 1 : -1;
+    private static double randomizeDirection(double d) {
+        return d * (Math.random() > 0.5 ? 1 : -1);
     }
 
     public static List<Double> fillArrayList(Supplier<Double> value, int size) {
