@@ -289,15 +289,21 @@ public class ParticleSystem extends ParticleBase<ParticleOptions, ParticleElemen
             if (movingOutHorizontal && options.getCollisionEdge() == Obstacle.BOUNCE) {
                 dot.setVx(-dot.getVx());
                 dot.setVelocityChanged(true);
-            } else if (movingOutHorizontal && (x + r < 0 || x - r > width) && options.getCollisionEdge() == Obstacle.IGNORE) {
-                toRemove.add(dot);
+            } else {
+                Trail trail = dot.getTrail().peek();
+                if (movingOutHorizontal && (x + r < 0 || x - r > width) && dot.getTrail().isEmpty() && options.getCollisionEdge() == Obstacle.IGNORE && (trail == null || trail.getX() + r < 0 || trail.getX() - r > width)) {
+                    toRemove.add(dot);
+                }
             }
 
             if (movingOutVertical && options.getCollisionEdge() == Obstacle.BOUNCE) {
                 dot.setVy(-dot.getVy());
                 dot.setVelocityChanged(true);
-            } else if (movingOutVertical && (y + r < 0 || y - r > height) && options.getCollisionEdge() == Obstacle.IGNORE) {
-                toRemove.add(dot);
+            } else {
+                Trail trail = dot.getTrail().peek();
+                if (movingOutVertical && (y + r < 0 || y - r > height) && options.getCollisionEdge() == Obstacle.IGNORE && (trail == null || trail.getY() + r < 0 || trail.getY() - r > height)) {
+                    toRemove.add(dot);
+                }
             }
         }
 
