@@ -323,7 +323,7 @@ public class ParticleSystem extends ParticleBase<ParticleOptions, ParticleElemen
     private void handleInternCollision() {
         for (ParticleElement dot : elements) {
             for (ParticleElement dot1 : elements) {
-                if (dot1 == dot || !Utils.intersect(dot, dot1) || dot1.isVelocityChanged() && dot.isVelocityChanged()) {
+                if (dot1 == dot || dot1.isVelocityChanged() && dot.isVelocityChanged() || !Utils.intersect(dot, dot1)) {
                     continue;
                 }
 
