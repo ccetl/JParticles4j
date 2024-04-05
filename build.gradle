@@ -2,5 +2,7 @@ plugins {
     id 'java'
 }
 
-group = 'ccetl'
-version = '1.0.5'
+base {
+    group = 'ccetl'
+    version = '1.0.6'
+}
