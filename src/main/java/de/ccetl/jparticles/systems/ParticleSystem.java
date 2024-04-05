@@ -174,11 +174,6 @@ public class ParticleSystem extends ParticleBase<ParticleOptions, ParticleElemen
     }
 
     private void drawTrails(ParticleElement dot, double alive, long time, boolean create) {
-        if (!options.isTrails()) {
-            return;
-        }
-
-
         LinkedList<Trail> trail = dot.getTrail();
 
         if (create) {
@@ -247,10 +242,10 @@ public class ParticleSystem extends ParticleBase<ParticleOptions, ParticleElemen
                     double correctedRotation = rotation - HALF_PI;
                     double correctedRotation1 = rotation + HALF_PI;
 
-                    x = Math.round(vec.getX() + Math.cos(correctedRotation) * dot.getRadius());
-                    y = Math.round(vec.getY() + Math.sin(correctedRotation) * dot.getRadius());
-                    x1 = Math.round(vec1.getX() + Math.cos(correctedRotation1) * dot1.getRadius());
-                    y1 = Math.round(vec1.getY() + Math.sin(correctedRotation1) * dot1.getRadius());
+                    x = vec.getX() + Math.cos(correctedRotation) * dot.getRadius();
+                    y = vec.getY() + Math.sin(correctedRotation) * dot.getRadius();
+                    x1 = vec1.getX() + Math.cos(correctedRotation1) * dot1.getRadius();
+                    y1 = vec1.getY() + Math.sin(correctedRotation1) * dot1.getRadius();
                 }
 
                 options.getRenderer().drawLine(x, y, x1, y1, options.getLineWidth(), dot.getColor());
