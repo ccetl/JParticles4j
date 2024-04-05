@@ -23,5 +23,13 @@ public interface CommonParticleOptions extends CommonOptions {
     // (0, +∞)
     double getMaxSpeed();
 
+    boolean isSpin();
+
+    // (0, 360)
+    double getMaxSpinSpeed();
+
+    // (0, 360)
+    double getMinSpinSpeed();
+
     Supplier<Shape> getShapeSupplier();
 }

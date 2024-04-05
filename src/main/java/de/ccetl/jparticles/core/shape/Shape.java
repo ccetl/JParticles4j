@@ -16,19 +16,19 @@ public class Shape {
         this.type = type;
     }
 
-    public void render(Renderer renderer, Vec2d vec2d, double radius, int color) {
+    public void render(Renderer renderer, Vec2d vec2d, double radius, double degrees, int color) {
         switch (type) {
             case CIRCLE:
-                renderer.drawCircle(vec2d.getX(), vec2d.getY(), radius, color);
+                renderer.drawCircle(vec2d.getX(), vec2d.getY(), radius, degrees, color);
                 break;
             case STAR:
-                renderer.drawStar(vec2d.getX(), vec2d.getY(), radius, sides, dent, color);
+                renderer.drawStar(vec2d.getX(), vec2d.getY(), radius, sides, dent, degrees, color);
                 break;
             case TRIANGLE:
-                renderer.drawTriangle(vec2d.getX(), vec2d.getY(), radius, color);
+                renderer.drawTriangle(vec2d.getX(), vec2d.getY(), radius, degrees, color);
                 break;
             case IMAGE:
-                renderer.drawImage(vec2d.getX(), vec2d.getY(), radius, id);
+                renderer.drawImage(vec2d.getX(), vec2d.getY(), radius, degrees, id);
                 break;
             default:
                 throw new IllegalArgumentException();

@@ -6,8 +6,8 @@ import de.ccetl.jparticles.core.shape.Shape;
 public class SnowElement extends Element {
     private long swingAt;
 
-    public SnowElement(double radius, double x, double y, double vx, double vy, int color, long swingAt, Shape shape) {
-        super(x, y, radius, vx, vy, color, shape);
+    public SnowElement(double radius, double x, double y, double vx, double vy, int color, long swingAt, Shape shape, double rotationSpeed, double rotation) {
+        super(x, y, radius, vx, vy, color, shape, rotationSpeed, rotation);
         this.swingAt = swingAt;
     }
 

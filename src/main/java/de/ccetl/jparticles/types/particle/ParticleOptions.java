@@ -55,7 +55,7 @@ public interface ParticleOptions extends CommonParticleOptions {
     boolean isTrails();
 
     // How long to wait before setting the point (in MS)
-    double getTrailUpdate();
+    double getTrailUpdate(); // TODO better make that position based so it doesn't look weird on low fps?
 
     // How long a point should stay alive (in MS)
     double getTrailAlive();

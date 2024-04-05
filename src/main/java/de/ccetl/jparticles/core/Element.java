@@ -12,6 +12,10 @@ public abstract class Element extends Vec2d {
      */
     private final double radius;
     /**
+     * The rotation speed of the element.
+     */
+    private final double rotationSpeed;
+    /**
      * Represents the velocity.
      */
     private final Vec2d v;
@@ -23,13 +27,26 @@ public abstract class Element extends Vec2d {
      * The shape.
      */
     private final Shape shape;
+    /**
+     * The current rotation of the element.
+     */
+    private double rotation;
 
-    public Element(double x, double y, double radius, double vx, double vy, int color, Shape shape) {
+    public Element(double x, double y, double radius, double vx, double vy, int color, Shape shape, double rotationSpeed, double rotation) {
         super(x, y);
         this.radius = radius;
         this.v = new Vec2d(vx, vy);
         this.color = color;
         this.shape = shape;
+        this.rotationSpeed = rotationSpeed;
+        this.rotation = rotation;
+    }
+
+    public void updateRotation(double delta) {
+        rotation += rotationSpeed * delta;
+        if (rotation >= 360) {
+            rotation -= 360;
+        }
     }
 
     public double getRadius() {
@@ -62,5 +79,9 @@ public abstract class Element extends Vec2d {
 
     public Shape getShape() {
         return shape;
+    }
+
+    public double getRotation() {
+        return rotation;
     }
 }

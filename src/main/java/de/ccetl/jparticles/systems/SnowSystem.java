@@ -31,6 +31,7 @@ public class SnowSystem extends ParticleBase<SnowOptions, SnowElement> {
     public void draw(double mouseX, double mouseY) {
         double maxR = options.getMaxRadius();
         boolean swing = options.isSwing();
+        boolean rotate = options.isSpin();
         int swingInterval = options.getSwingInterval();
         double swingProbability = options.getSwingProbability();
         double duration = options.getDuration();
@@ -44,7 +45,7 @@ public class SnowSystem extends ParticleBase<SnowOptions, SnowElement> {
             double y = snowflake.getY();
             double r = snowflake.getRadius();
 
-            snowflake.getShape().render(options.getRenderer(), new Vec2d(x, y), r, snowflake.getColor());
+            snowflake.getShape().render(options.getRenderer(), new Vec2d(x, y), r, snowflake.getRotation(), snowflake.getColor());
 
             if (paused) {
                 return;
@@ -52,6 +53,10 @@ public class SnowSystem extends ParticleBase<SnowOptions, SnowElement> {
 
             snowflake.setX(x + snowflake.getVx() * delta);
             snowflake.setY(y + snowflake.getVy() * delta);
+
+            if (rotate) {
+                snowflake.updateRotation(delta);
+            }
 
             if (swing && System.currentTimeMillis() - snowflake.getSwingAt() > swingInterval && Math.random() < (r / maxR) * swingProbability) {
                 snowflake.setSwingAt(System.currentTimeMillis());
@@ -107,8 +112,7 @@ public class SnowSystem extends ParticleBase<SnowOptions, SnowElement> {
                 Utils.randomSpeed(minSpeed, maxSpeed),
                 Math.abs(r * Utils.randomSpeed(minSpeed, maxSpeed)),
                 options.getColorSupplier().get(),
-                System.currentTimeMillis(),
-                options.getShapeSupplier().get()
+                System.currentTimeMillis(), options.getShapeSupplier().get(), Utils.getRandomInRange(options.getMinSpinSpeed(), options.getMaxSpinSpeed()), options.isSpin() ? Utils.getRandomInRange(0, 360) : 0
         );
     }
 
@@ -152,6 +156,9 @@ public class SnowSystem extends ParticleBase<SnowOptions, SnowElement> {
         private boolean swing = true;
         private int swingInterval = 2000;
         private double swingProbability = 0.06;
+        private boolean spin = false;
+        private double minSpinSpeed = 1;
+        private double maxSpinSpeed = 5;
 
         @Override
         public boolean isFirstRandom() {
@@ -268,6 +275,33 @@ public class SnowSystem extends ParticleBase<SnowOptions, SnowElement> {
 
         public void setSwingProbability(double swingProbability) {
             this.swingProbability = swingProbability;
+        }
+
+        @Override
+        public boolean isSpin() {
+            return spin;
+        }
+
+        public void setSpin(boolean spin) {
+            this.spin = spin;
+        }
+
+        @Override
+        public double getMaxSpinSpeed() {
+            return maxSpinSpeed;
+        }
+
+        @Override
+        public double getMinSpinSpeed() {
+            return minSpinSpeed;
+        }
+
+        public void setMinSpinSpeed(double minSpinSpeed) {
+            this.minSpinSpeed = minSpinSpeed;
+        }
+
+        public void setMaxSpinSpeed(double maxSpinSpeed) {
+            this.maxSpinSpeed = maxSpinSpeed;
         }
     }
 }

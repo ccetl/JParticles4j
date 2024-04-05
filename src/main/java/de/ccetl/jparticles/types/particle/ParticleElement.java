@@ -14,8 +14,8 @@ public class ParticleElement extends Element {
     private double parallaxOffsetY;
     private boolean velocityChanged;
 
-    public ParticleElement(double radius, double x, double y, double vx, double vy, int color, Shape shape, int parallaxLayer, double parallaxOffsetX, double parallaxOffsetY) {
-        super(x, y, radius, vx, vy, color, shape);
+    public ParticleElement(double radius, double x, double y, double vx, double vy, int color, Shape shape, int parallaxLayer, double parallaxOffsetX, double parallaxOffsetY, double rotationSpeed, double rotation) {
+        super(x, y, radius, vx, vy, color, shape, rotationSpeed, rotation);
         this.parallaxLayer = parallaxLayer;
         this.parallaxOffsetX = parallaxOffsetX;
         this.parallaxOffsetY = parallaxOffsetY;

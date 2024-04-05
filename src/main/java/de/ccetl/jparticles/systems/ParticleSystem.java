@@ -102,7 +102,7 @@ public class ParticleSystem extends ParticleBase<ParticleOptions, ParticleElemen
                 break;
         }
         Vec2d speed = Utils.getSpeed(options.getDirection(), options.getMinSpeed(), options.getMaxSpeed());
-        ParticleElement dot = new ParticleElement(r, Utils.getRandomInRange(minX, maxX), Utils.getRandomInRange(minY, maxY), speed.getX(), speed.getY(), options.getColorSupplier().get(), options.getShapeSupplier().get(), options.getParallaxLayer()[new Random().nextInt(options.getParallaxLayer().length)], 0, 0);
+        ParticleElement dot = new ParticleElement(r, Utils.getRandomInRange(minX, maxX), Utils.getRandomInRange(minY, maxY), speed.getX(), speed.getY(), options.getColorSupplier().get(), options.getShapeSupplier().get(), options.getParallaxLayer()[new Random().nextInt(options.getParallaxLayer().length)], 0, 0, Utils.getRandomInRange(options.getMinSpinSpeed(), options.getMaxSpinSpeed()), options.isSpin() ? Utils.getRandomInRange(0, 360) : 0);
 
         if (!force && options.getCollisionIntern() != Obstacle.IGNORE && elements.stream().anyMatch(dot1 -> Utils.intersect(dot, dot1))) {
             try {
@@ -119,222 +119,228 @@ public class ParticleSystem extends ParticleBase<ParticleOptions, ParticleElemen
     public void draw(double mouseX, double mouseY) {
         positionX = mouseX;
         positionY = mouseY;
-        updateXY(mouseX, mouseY);
-        drawTrails();
+        double delta = getDelta();
 
-        for (ParticleElement dot : this.elements) {
-            double x = dot.getX() + dot.getParallaxOffsetX();
-            double y = dot.getY() + dot.getParallaxOffsetY();
-            dot.getShape().render(options.getRenderer(), new Vec2d(x, y), dot.getRadius(), dot.getColor());
+        List<ParticleElement> toRemove = new LinkedList<>();
+        boolean rotate = options.isSpin();
+        if (!paused) {
+            for (ParticleElement dot : elements) {
+                updateXY(dot, toRemove, mouseX, mouseY, delta);
+                if (rotate) {
+                    dot.updateRotation(delta);
+                }
+            }
+        }
+        elements.removeAll(toRemove);
+
+        boolean trails = options.isTrails();
+        long time = 0L;
+        double alive = 0D;
+        boolean create = false;
+        if (trails) {
+            time = System.currentTimeMillis();
+            alive = options.getTrailAlive();
+            create = time - lastTrailUpdate >= options.getTrailUpdate();
         }
 
-        connectDots();
+        boolean ignore = options.getCollisionEdge() != Obstacle.IGNORE || options.getCollisionIntern() != Obstacle.IGNORE;
+        boolean connect = options.getRange() > 0;
+        for (ParticleElement dot : elements) {
+            if (options.getCollisionIntern() == Obstacle.BOUNCE) {
+                handleInternCollision(dot);
+            }
+
+            if (ignore) {
+                dot.setVelocityChanged(false);
+            }
+
+            if (trails) {
+                drawTrails(dot, alive, time, create);
+            }
+
+            double x = dot.getX() + dot.getParallaxOffsetX();
+            double y = dot.getY() + dot.getParallaxOffsetY();
+            dot.getShape().render(options.getRenderer(), new Vec2d(x, y), dot.getRadius(), dot.getRotation(), dot.getColor());
+
+            if (connect) {
+                connectDots(dot);
+            }
+        }
+        if (trails) {
+            lastTrailUpdate = time;
+        }
+
         createDots();
     }
 
-    private void drawTrails() {
+    private void drawTrails(ParticleElement dot, double alive, long time, boolean create) {
         if (!options.isTrails()) {
             return;
         }
 
-        double alive = options.getTrailAlive();
-        long time = System.currentTimeMillis();
-        boolean create = time - lastTrailUpdate >= options.getTrailUpdate();
-        for (ParticleElement dot : elements) {
-            LinkedList<Trail> trail = dot.getTrail();
 
-            if (create) {
-                trail.add(new Trail(Utils.getX(dot), Utils.getY(dot), time));
+        LinkedList<Trail> trail = dot.getTrail();
+
+        if (create) {
+            trail.add(new Trail(Utils.getX(dot), Utils.getY(dot), time, dot.getRotation()));
+        }
+
+        int length = trail.size();
+        if (length == 0) {
+            return;
+        }
+
+        if (time - trail.peek().getCreation() > alive) {
+            trail.poll();
+            if (length == 1) {
+                return;
             }
+        }
 
-            int length = trail.size();
-            if (length == 0) {
+        int dotColor = dot.getColor();
+        double alpha = (dotColor >> 24) & 0xFF;
+        double size = dot.getRadius() + dot.getRadius();
+
+        for (Trail t : trail) { // TODO maybe reverse draw order
+            double p = 1 - (time - t.getCreation()) / alive;
+            if (p <= 0 || p > 1) {
                 continue;
             }
 
-            if (time - trail.peek().getCreation() > alive) {
-                trail.poll();
-                if (length == 1) {
-                    continue;
-                }
+            int modified = (int) Math.round(p * alpha);
+
+            double modifiedSize = size;
+            if (options.isTrailShrink()) {
+                modifiedSize *= p;
             }
 
-            int dotColor = dot.getColor();
-            double alpha = (dotColor >> 24) & 0xFF;
-            double size = dot.getRadius() + dot.getRadius();
-
-            for (Trail t : trail) {
-                double p = 1 - (time - t.getCreation()) / alive;
-                if (p <= 0 || p > 1) {
-                    continue;
-                }
-
-                int modified = (int) Math.round(p * alpha);
-
-                double modifiedSize = size;
-                if (options.isTrailShrink()) {
-                    modifiedSize *= p;
-                }
-
-                dot.getShape().render(options.getRenderer(), t, modifiedSize * 0.5, (modified << 24) | (dotColor & 0x00FFFFFF));
-            }
-        }
-
-        lastTrailUpdate = time;
-    }
-
-    private void connectDots() {
-        if (this.options.getRange() <= 0) {
-            return;
-        }
-
-        for (ParticleElement dot : elements) {
-            Vec2d vec = new Vec2d(Utils.getX(dot), Utils.getY(dot));
-
-            for (ParticleElement dot1 : elements) {
-                if (dot == dot1) {
-                    continue;
-                }
-
-                Vec2d vec1 = new Vec2d(Utils.getX(dot1), Utils.getY(dot1));
-
-                lineShapeMaker.apply(vec.getX(), vec.getY(), vec1.getX(), vec1.getY(), () -> {
-                    double x;
-                    double y;
-                    double x1;
-                    double y1;
-
-                    if (options.isCenterLines()) {
-                        x = vec.getX();
-                        y = vec.getY();
-                        x1 = vec1.getX();
-                        y1 = vec1.getY();
-                    } else {
-                        Vec2d vec2 = vec.copy().set(vec);
-
-                        Vec2d deltaVec = vec1.copy().subtract(vec2);
-                        double rotation = Math.PI - Math.atan2(deltaVec.getX(), deltaVec.getY());
-                        double correctedRotation = rotation - HALF_PI;
-                        double correctedRotation1 = rotation + HALF_PI;
-
-                        x = Math.round(vec.getX() + Math.cos(correctedRotation) * dot.getRadius());
-                        y = Math.round(vec.getY() + Math.sin(correctedRotation) * dot.getRadius());
-                        x1 = Math.round(vec1.getX() + Math.cos(correctedRotation1) * dot1.getRadius());
-                        y1 = Math.round(vec1.getY() + Math.sin(correctedRotation1) * dot1.getRadius());
-                    }
-
-                    options.getRenderer().drawLine(x, y, x1, y1, options.getLineWidth(), dot.getColor());
-                });
-            }
+            dot.getShape().render(options.getRenderer(), t, modifiedSize * 0.5, t.getRotation(), (modified << 24) | (dotColor & 0x00FFFFFF));
         }
     }
 
-    private void updateXY(double mouseX, double mouseY) {
-        if (paused) {
-            return;
-        }
+    private void connectDots(ParticleElement dot) {
+        Vec2d vec = new Vec2d(Utils.getX(dot), Utils.getY(dot));
 
+        for (ParticleElement dot1 : elements) {
+            if (dot == dot1) {
+                continue;
+            }
+
+            Vec2d vec1 = new Vec2d(Utils.getX(dot1), Utils.getY(dot1));
+
+            lineShapeMaker.apply(vec.getX(), vec.getY(), vec1.getX(), vec1.getY(), () -> {
+                double x;
+                double y;
+                double x1;
+                double y1;
+
+                if (options.isCenterLines()) {
+                    x = vec.getX();
+                    y = vec.getY();
+                    x1 = vec1.getX();
+                    y1 = vec1.getY();
+                } else {
+                    Vec2d vec2 = vec.copy().set(vec);
+
+                    Vec2d deltaVec = vec1.copy().subtract(vec2);
+                    double rotation = Math.PI - Math.atan2(deltaVec.getX(), deltaVec.getY());
+                    double correctedRotation = rotation - HALF_PI;
+                    double correctedRotation1 = rotation + HALF_PI;
+
+                    x = Math.round(vec.getX() + Math.cos(correctedRotation) * dot.getRadius());
+                    y = Math.round(vec.getY() + Math.sin(correctedRotation) * dot.getRadius());
+                    x1 = Math.round(vec1.getX() + Math.cos(correctedRotation1) * dot1.getRadius());
+                    y1 = Math.round(vec1.getY() + Math.sin(correctedRotation1) * dot1.getRadius());
+                }
+
+                options.getRenderer().drawLine(x, y, x1, y1, options.getLineWidth(), dot.getColor());
+            });
+        }
+    }
+
+    private void updateXY(ParticleElement dot, List<ParticleElement> toRemove, double mouseX, double mouseY, double delta) {
         boolean parallax = this.options.isParallax();
         double parallaxStrength = this.options.getParallaxStrength();
-        double delta = getDelta();
 
-        List<ParticleElement> toRemove = new LinkedList<>();
+        dot.setX(dot.getX() + dot.getVx() * delta);
+        dot.setY(dot.getY() + dot.getVy() * delta);
 
-        for (ParticleElement dot : elements) {
-            dot.setX(dot.getX() + dot.getVx() * delta);
-            dot.setY(dot.getY() + dot.getVy() * delta);
+        if (parallax) {
+            double divisor = parallaxStrength * dot.getParallaxLayer();
+            double parallaxOffsetX = (mouseX / divisor - dot.getParallaxOffsetX()) / 10;
+            double parallaxOffsetY = (mouseY / divisor - dot.getParallaxOffsetY()) / 10;
+            double newX = dot.getX() + parallaxOffsetX;
+            double newY = dot.getY() + parallaxOffsetY;
 
-            if (parallax) {
-                double divisor = parallaxStrength * dot.getParallaxLayer();
-                double parallaxOffsetX = (mouseX / divisor - dot.getParallaxOffsetX()) / 10;
-                double parallaxOffsetY = (mouseY / divisor - dot.getParallaxOffsetY()) / 10;
-                double newX = dot.getX() + parallaxOffsetX;
-                double newY = dot.getY() + parallaxOffsetY;
-
-                if (options.getCollisionEdge() == Obstacle.IGNORE || newX - dot.getRadius() >= 0 && newX + dot.getRadius() <= width) {
-                    dot.setParallaxOffsetX(parallaxOffsetX);
-                } else {
-                    double minX = -dot.getX() + dot.getRadius();
-                    double maxX = width - dot.getX() - dot.getRadius();
-                    dot.setParallaxOffsetX(Utils.clamp(parallaxOffsetX, minX, maxX));
-                }
-
-                if (options.getCollisionEdge() == Obstacle.IGNORE || newY - dot.getRadius() >= 0 && newY + dot.getRadius() <= height) {
-                    dot.setParallaxOffsetY(parallaxOffsetY);
-                } else {
-                    double minY = -dot.getY() + dot.getRadius();
-                    double maxY = height - dot.getY() - dot.getRadius();
-                    dot.setParallaxOffsetY(Utils.clamp(parallaxOffsetY, minY, maxY));
-                }
-            }
-
-            if (options.isHoverRepulse()) {
-                Vec2d deltaVec = new Vec2d(Utils.getX(dot), Utils.getY(dot)).subtract(new Vec2d(mouseX, mouseY));
-                double distance = deltaVec.getLength();
-
-                if (distance < options.getRepulseRadius()) {
-                    dot.set(deltaVec.add(dot));
-                }
-            }
-
-            double r = dot.getRadius();
-            double x = dot.getX();
-            double y = dot.getY();
-            x += dot.getParallaxOffsetX();
-            y += dot.getParallaxOffsetY();
-
-            boolean movingOutHorizontal = (dot.getVx() > 0 && (x + r >= width)) || (dot.getVx() < 0 && (x - r <= 0));
-            boolean movingOutVertical = (dot.getVy() > 0 && (y + r >= height)) || (dot.getVy() < 0 && (y - r <= 0));
-
-            if (movingOutHorizontal && options.getCollisionEdge() == Obstacle.BOUNCE) {
-                dot.setVx(-dot.getVx());
-                dot.setVelocityChanged(true);
+            if (options.getCollisionEdge() == Obstacle.IGNORE || newX - dot.getRadius() >= 0 && newX + dot.getRadius() <= width) {
+                dot.setParallaxOffsetX(parallaxOffsetX);
             } else {
-                Trail trail = dot.getTrail().peek();
-                if (movingOutHorizontal && (x + r < 0 || x - r > width) && dot.getTrail().isEmpty() && options.getCollisionEdge() == Obstacle.IGNORE && (trail == null || trail.getX() + r < 0 || trail.getX() - r > width)) {
-                    toRemove.add(dot);
-                }
+                double minX = -dot.getX() + dot.getRadius();
+                double maxX = width - dot.getX() - dot.getRadius();
+                dot.setParallaxOffsetX(Utils.clamp(parallaxOffsetX, minX, maxX));
             }
 
-            if (movingOutVertical && options.getCollisionEdge() == Obstacle.BOUNCE) {
-                dot.setVy(-dot.getVy());
-                dot.setVelocityChanged(true);
+            if (options.getCollisionEdge() == Obstacle.IGNORE || newY - dot.getRadius() >= 0 && newY + dot.getRadius() <= height) {
+                dot.setParallaxOffsetY(parallaxOffsetY);
             } else {
-                Trail trail = dot.getTrail().peek();
-                if (movingOutVertical && (y + r < 0 || y - r > height) && options.getCollisionEdge() == Obstacle.IGNORE && (trail == null || trail.getY() + r < 0 || trail.getY() - r > height)) {
-                    toRemove.add(dot);
-                }
+                double minY = -dot.getY() + dot.getRadius();
+                double maxY = height - dot.getY() - dot.getRadius();
+                dot.setParallaxOffsetY(Utils.clamp(parallaxOffsetY, minY, maxY));
             }
         }
 
-        elements.removeAll(toRemove);
+        if (options.isHoverRepulse()) {
+            Vec2d deltaVec = new Vec2d(Utils.getX(dot), Utils.getY(dot)).subtract(new Vec2d(mouseX, mouseY));
+            double distance = deltaVec.getLength();
 
-        if (options.getCollisionIntern() == Obstacle.BOUNCE) {
-            handleInternCollision();
+            if (distance < options.getRepulseRadius()) {
+                dot.set(deltaVec.add(dot));
+            }
         }
 
-        if (options.getCollisionEdge() != Obstacle.IGNORE || options.getCollisionIntern() != Obstacle.IGNORE) {
-            for (ParticleElement dot : elements) {
-                dot.setVelocityChanged(false);
+        double r = dot.getRadius();
+        double x = dot.getX();
+        double y = dot.getY();
+        x += dot.getParallaxOffsetX();
+        y += dot.getParallaxOffsetY();
+
+        boolean movingOutHorizontal = (dot.getVx() > 0 && (x + r >= width)) || (dot.getVx() < 0 && (x - r <= 0));
+        boolean movingOutVertical = (dot.getVy() > 0 && (y + r >= height)) || (dot.getVy() < 0 && (y - r <= 0));
+
+        if (movingOutHorizontal && options.getCollisionEdge() == Obstacle.BOUNCE) {
+            dot.setVx(-dot.getVx());
+            dot.setVelocityChanged(true);
+        } else {
+            Trail trail = dot.getTrail().peek();
+            if (movingOutHorizontal && (x + r < 0 || x - r > width) && dot.getTrail().isEmpty() && options.getCollisionEdge() == Obstacle.IGNORE && (trail == null || trail.getX() + r < 0 || trail.getX() - r > width)) {
+                toRemove.add(dot);
+            }
+        }
+
+        if (movingOutVertical && options.getCollisionEdge() == Obstacle.BOUNCE) {
+            dot.setVy(-dot.getVy());
+            dot.setVelocityChanged(true);
+        } else {
+            Trail trail = dot.getTrail().peek();
+            if (movingOutVertical && (y + r < 0 || y - r > height) && options.getCollisionEdge() == Obstacle.IGNORE && (trail == null || trail.getY() + r < 0 || trail.getY() - r > height)) {
+                toRemove.add(dot);
             }
         }
     }
 
-    private void handleInternCollision() {
-        for (ParticleElement dot : elements) {
-            for (ParticleElement dot1 : elements) {
-                if (dot1 == dot || dot1.isVelocityChanged() && dot.isVelocityChanged() || !Utils.intersect(dot, dot1)) {
-                    continue;
-                }
-
-                dot.handleCollision(dot1);
+    private void handleInternCollision(ParticleElement dot) {
+        for (ParticleElement dot1 : elements) {
+            if (dot1 == dot || dot1.isVelocityChanged() && dot.isVelocityChanged() || !Utils.intersect(dot, dot1)) {
+                continue;
             }
+
+            dot.handleCollision(dot1);
         }
     }
 
-//    public void onMouseCLick(MouseEvent event) {
-//
-//    }
+    //    public void onMouseClick(MouseEvent event) {
+    //
+    //    }
 
     private interface LineShapeMaker {
         void apply(double x, double y, double sx, double sy, Runnable cb);
@@ -366,6 +372,9 @@ public class ParticleSystem extends ParticleBase<ParticleOptions, ParticleElemen
         private double trailUpdate = 20;
         private double trailAlive = 1000;
         private boolean trailShrink = true;
+        private boolean spin = false;
+        private double minSpinSpeed = 1;
+        private double maxSpinSpeed = 5;
 
         @Override
         public Supplier<Shape> getShapeSupplier() {
@@ -590,6 +599,33 @@ public class ParticleSystem extends ParticleBase<ParticleOptions, ParticleElemen
 
         public void setTrailShrink(boolean trailShrink) {
             this.trailShrink = trailShrink;
+        }
+
+        @Override
+        public boolean isSpin() {
+            return spin;
+        }
+
+        public void setSpin(boolean spin) {
+            this.spin = spin;
+        }
+
+        @Override
+        public double getMaxSpinSpeed() {
+            return maxSpinSpeed;
+        }
+
+        @Override
+        public double getMinSpinSpeed() {
+            return minSpinSpeed;
+        }
+
+        public void setMinSpinSpeed(double minSpinSpeed) {
+            this.minSpinSpeed = minSpinSpeed;
+        }
+
+        public void setMaxSpinSpeed(double maxSpinSpeed) {
+            this.maxSpinSpeed = maxSpinSpeed;
         }
     }
 }
