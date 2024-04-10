@@ -44,9 +44,7 @@ public abstract class Element extends Vec2d {
 
     public void updateRotation(double delta) {
         rotation += rotationSpeed * delta;
-        while (rotation >= 360) {
-            rotation -= 360;
-        }
+        rotation %= 360;
     }
 
     public double getRadius() {
